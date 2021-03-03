@@ -3,8 +3,8 @@ from app import db
 # - one
 # = many
 
-# User     - -  Class
-# Class    - =  Student
+#[] User   - -  Class 
+#[] Class  - =  Student
 # Student  = =  Subject
 # Semester - =  Subject
 
@@ -28,9 +28,9 @@ class Class_(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     class_name = db.Column(db.String(50), nullable=False, unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey(User.id), unique=True)
-    students = db.relationship('Student', backref='Person')
+    students = db.relationship('Student', backref='class_')
 
-    def __init__(self, class_name, user_id = None):
+    def __init__(self, class_name, user_id = None, students = None):
         self.class_name = class_name
         self.user_id = user_id
     
@@ -43,6 +43,15 @@ class Student(db.Model):
     student_code = db.Column(db.String(10), nullable=False, unique=True)
     course = db.Column(db.Integer, nullable=False)
     class_id = db.Column(db.Integer, db.ForeignKey(Class_.id))
+
+    def __init__(self, full_name, student_code, course, class_id = None):
+        self.full_name = full_name
+        self.student_code = student_code
+        self.course = course
+        self.class_id = class_id
+
+    def __repr__(self):
+        return "<Student({}, {}, {}, {})>".format(full_name, student_code, course, class_id)
 
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)

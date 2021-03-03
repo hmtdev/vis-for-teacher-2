@@ -3,16 +3,20 @@ from app.models import *
 db.drop_all()
 db.create_all()
 
-class_ = Class_(class_name='DHKDL15A')
-user = User(username='trungbe', full_name='Phạm Thành Bưởi', password_hash='hainamkhongtam', class_=class_)
+a_class = Class_('DHKHDL15A')
 
-db.session.add(class_)
-db.session.add(user)
+a_user = User('trungbe', 'trumbquanxip', 'Phạm Thành Bưởi', class_=a_class)
+
+db.session.add(a_class)
+db.session.add(a_user)
+
+fulls = ['toan', 'tuan', 'trung']
+code = ['12', '13', '14']
+course = [15, 15, 15]
+
+a_class = Class_.query.all()[-1]
+
+for i in range(len(code)):
+    foo = Student(full_name=fulls[i], student_code=code[i], course=course[i], class_id=a_class.id)
+    db.session.add(foo)
 db.session.commit()
-
-data = Class_.query.one()
-foo = User.query.one()
-
-bar = Class_.query.filter(Class_.user_id==user.id).one()
-
-print(foo, bar)
