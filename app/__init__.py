@@ -7,7 +7,7 @@ basedir  = os.path.abspath(os.path.dirname(__file__))
 
 username = 'postgres'
 password = 'Tuan1211'
-db_name = 'vis_for_teacher_test'
+db_name = 'vis_for_teacher'
 host = 'localhost'
 port = '5432'
 
