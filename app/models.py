@@ -71,6 +71,7 @@ class Student(db.Model):
     full_name = db.Column(db.String(200), nullable=False)
     student_code = db.Column(db.String(10), nullable=False, unique=True)
     course = db.Column(db.Integer, nullable=False)
+    passed_credit = db.Column(db.Integer)
 
     # one class
     class_id = db.Column(db.Integer, db.ForeignKey('Class_.id'), nullable=False)
