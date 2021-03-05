@@ -1,20 +1,29 @@
 #!/home/tuanio/anaconda3/bin/python3
 import sys
 import pandas as pd
-import pandas as pd
 import numpy as np
 from math import nan
-import matplotlib.pyplot as plt
-import scipy.stats as stats
+from app import *
+import os
+import pickle
+# import scipy.stats as stats
+
+def write_json(name, data):
+    with open(name, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+def read_json(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
 
 if len(sys.argv) == 1:
     print('No file name')
-elif len(sys.argv) > 2:
-    print('Too much file')
-if (len(sys.argv) != 2): sys.exit(0)
+# elif len(sys.argv) > 2:
+#     print('Too much file')
+# if (len(sys.argv) != 2): sys.exit(0)
 
 try:
-    df = pd.read_excel(sys.argv[1])
+    df = pd.read_excel(sys.argv[-1])
 except:
     print('File not exist!')
     sys.exit(0)
@@ -23,13 +32,16 @@ temp = df['Unnamed: 1'][3:6].reset_index(drop=True)
 names = temp[0].split('-')[0].split(':')[1].strip().split()
 
 class_info = {
-    'class_name': ''.join(names),
+    'class_name': ' '.join(names),
     'class_name_abbr': 'DH' + ''.join([i[0] for i in names[2:-1]]) + names[-1],
     'class_code': temp[0].split('-')[1].strip(),
-    'departure': temp[1].split(':')[1].strip(),
+    'branch': temp[1].split(':')[1].strip(),
     'major': temp[2].split('-')[0].split(':')[1].strip(),
-    'major_code': temp[2].split('-')[1].strip()
+    'major_code': temp[2].split('-')[1].strip(),
+    'current_semester': 3
 }
+
+write_json('data/class_info.pkl', class_info)
 
 df = df.iloc[7:,]
 df.columns = list(df.loc[7])
@@ -45,6 +57,9 @@ df.to_csv('data.csv', index=None, header=True)
 # Loại bỏ dấu cách
 
 df = pd.read_csv('data.csv')
+
+# remove file, don't need anymore
+os.remove('data.csv')
 
 df = df.rename(columns={i : i.strip() for i in df.columns})
 
@@ -146,7 +161,7 @@ def get_xeploai(diem):
     if (diem >= 250):
         ok = ['Tiếng anh 1']
         if (diem >= 350):
-            ok = ['Tiếng anh 2']
+            ok += ['Tiếng anh 2']
         ok += ['kk', 'kk']
     return ok
 
@@ -182,16 +197,10 @@ classmate = list(df['Họ và tên'])
 # lấy danh sách môn học
 subjects = list(df.columns[5:-6])
 
-
-
-
 # Tạo một dict trỏ từ tên đến index của người có tên đó (thường biết đến với biến num trong các hàm trên)
 index_of = {}
 for i in range(len(df)):
     index_of[df.loc[i, 'Họ và tên']] = i
-
-
-
 
 # tính điểm hệ 10
 def cal_10(num, data):
@@ -232,7 +241,7 @@ def cal_4(num, data):
     return round(s / tin_chi, 2)
 
 # số tín chỉ của sinh viên có index là num
-def so_tin_chi_sv(num, data):
+def so_tin_chi_sv_da_hoc(num, data):
     tin_chi = 0
     data = get_available_column(data, df.columns)
     for i in df.loc[num, data].items():
@@ -243,11 +252,33 @@ def so_tin_chi_sv(num, data):
             flag = True
             if (len(xeploai) >= 3):
                 flag = i[0] in xeploai
-            tin_chi += tin_chi_mon_hoc_df[i[0]].values[0]
+            tin_chi += tin_chi_mon_hoc_df[i[0]].values[0] * flag
     return int(tin_chi)
 
+def so_tin_chi_sv_da_dang_ki(num, data):
+    return sum([
+        tin_chi_mon_hoc[subj] 
+        for subj in data if not np.isnan(df.loc[num, subj])
+    ])
+
+# Hàm compare dùng để sắp xếp
+# -1 if o1 < o2
+# 1 if o1 > o2
+# 0 if o1 == o2
+def compare(o1, o2):
+    o1 = o1[0]
+    o2 = o2[0]
+    try:
+        o1[0]
+        o2[0]
+    except:
+        return 0
+    if (o1[0] == o2[0]):
+        return [1, -1][len(o1) == 2]
+    return [1, -1][o1[0] < o2[0]]
+
 # số tín chỉ của sinh viên có tên là name
-def so_tin_chi_sv2(name):
+def so_tin_chi_sv_by_name(name):
     tin_chi = 0
     for i in df.loc[df['Họ và tên'] == name, subjects].items():
         if np.isnan(i[1].values[0]):
@@ -257,7 +288,7 @@ def so_tin_chi_sv2(name):
             flag = True
             if (len(xeploai) >= 3):
                 flag = i[0] in xeploai
-            tin_chi += tin_chi_mon_hoc_df[i[0]].values[0]
+            tin_chi += tin_chi_mon_hoc_df[i[0]].values[0] * flag
     return int(tin_chi)
 
 # Lấy ra được danh sách tên người có học bổng
@@ -265,12 +296,9 @@ def scholarship(stc, data):
     data = get_available_column(data, df.columns)
     scholarship_members = []
     for i in range(len(df)):
-        if (so_tin_chi_sv(i, data) >= stc and cal_4(i, data) >= 3.2):
+        if (so_tin_chi_sv_by_index(i, data) >= stc and cal_4(i, data) >= 3.2):
             scholarship_members += [' '.join(df.loc[i, ['Họ đệm', 'Tên']].values)]
     return scholarship_members
-
-
-
 
 # Tạo một dic các môn đã học của từng sinh viên
 monhoc_cua_sv = {}
@@ -282,14 +310,11 @@ for i in range(len(df)):
             continue
         monhoc_cua_sv[name] += [subj]
 
-
-
 # Thay đổi điểm 10, 4, điểm chữ và xếp loại cho đúng
 for i in range(len(df)):
     df.loc[i, 'Điểm 10'] = cal_10(i, monhoc_cua_sv[df.loc[i, 'Họ và tên']])
     df.loc[i, 'Điểm 4'] = cal_4(i, monhoc_cua_sv[df.loc[i, 'Họ và tên']])
     df.loc[i, ['Điểm chữ', 'Xếp loại']] = get_xeploai(int(df.loc[i, 'Điểm 10']))
-
 
 xeploai_df = pd.DataFrame(columns=['STT', 'Mã sinh viên', 'Họ và tên', 'Họ đệm', 'Tên'] + subjects)
 for i in range(len(df)):
@@ -302,3 +327,24 @@ for i in range(len(df)):
             need = get_xeploai(df.loc[i, name])[0] if name in subjects and df.loc[i, name] <= 10 else df.loc[i, name]
         sv_info += [need]
     xeploai_df = pd.concat([xeploai_df, pd.DataFrame([sv_info], columns=list(xeploai_df.columns))], ignore_index=True)
+
+student_info = []
+# tạm thời cứ để class_id là 1, cập nhật lại sau
+# course được lấy 2 số đầu trừ đi 4
+for i in range(len(df)):
+    name = df.loc[i, 'Họ và tên']
+    foo = {
+        'full_name': df.loc[i, 'Họ và tên'],
+        'student_code': str(int(df.loc[i, 'Mã sinh viên'])),
+        'course': int(df.loc[i, 'Mã sinh viên']) // 10**6 - 4,
+        'passed_credit': so_tin_chi_sv_da_hoc(i, subjects),
+        'registered_credit': int(so_tin_chi_sv_da_dang_ki(i, subjects)),
+        'cumulative_score_10': df.loc[i, 'Điểm 10'],
+        'cumulative_score_4': df.loc[i, 'Điểm 4'],
+        'graded': df.loc[i, 'Xếp loại'],
+        'char_score': df.loc[i, 'Điểm chữ'],
+        'class_id': 1
+    }
+    student_info += [foo]
+write_json('data/student_info.pkl', student_info)
+

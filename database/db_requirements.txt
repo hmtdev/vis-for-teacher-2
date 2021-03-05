@@ -1,0 +1,13 @@
+- Thêm trường score_4 trong db.SubjectDetail
+- Thêm quan hệ Student = = Semester, tạo thêm bảng để lưu thông tin điểm
+- Ghi chú: 1 user có nhiều student, 1 student có nhiều note
+- Danh sách điểm: bảng semester có điểm hệ 10, điểm hệ 4, điểm hệ 10 tích lũy, điểm hệ 4 tích lũy
+- db.User thêm trường email
+
+- ô danh sách điểm: tickbox chọn các kỳ (1, 2, 3), truy vấn với mỗi kỳ [> < != = >= <=] [0-10]. Mặc đinhj là điểm tích lũy
+
+- tab 2, nửa dưới, bên trái: ô xem điểm theo môn, của toàn lớp, được search tên sinh viên
+
+cảnh báo:
+    - sinh viên rớt bao nhiêu môn
+    - điểm tích lũy hệ 4 nhỏ hơn 2 điểm, 

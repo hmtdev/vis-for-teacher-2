@@ -1,5 +1,15 @@
+import pickle
 from app import *
 from app.models import *
+
+
+def write_json(name, data):
+    with open(name, 'wb') as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+def read_json(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
 
 db.drop_all()
 # drop database by order
@@ -12,56 +22,64 @@ db.drop_all()
 
 db.create_all() 
 
-a_user = User(username='tuanio', password_hash='asdfasdfasfsaddf', full_name='Nguyễn Văn Anh Tuấn')
-
-
+# tạo một user tạm
+a_user = User(
+    'tuanio',
+    'passwordhashed',
+    'Nguyễn Văn Anh Tuấn',
+    'nvatuan3@gmail.com'
+)
 db.session.add(a_user)
 db.session.commit()
 
-print(a_user)
+# tạo 8 học kì
+semesters = [Semester(i) for i in range(1, 9)]
+for i in semesters: 
+    db.session.add(i)
+db.session.commit()
 
-a_class = Class_('Đại Học Khoa Học Dữ Liệu 15A', user_id=a_user.id)
+# Thêm các môn vào chương trình khung
+semester_subjects = read_json('data/semester.pkl')
+for semester, subjects in semester_subjects.items():
+    data = Semester.query.filter_by(id=semester).one()
+    for subj in subjects:
+        subject = Subject(
+            name=subj['name'],
+            credit=subj['credit'],
+            semester_id=data.id
+        )
+        db.session.add(subject)
+db.session.commit()
 
+# đưa thông tin của lớp vào database
+class_info = read_json('data/class_info.pkl')
+a_class = Class_(
+    class_name=class_info['class_name'],
+    class_name_abbr=class_info['class_name_abbr'],
+    class_code=class_info['class_code'],
+    branch=class_info['branch'],
+    major=class_info['major'],
+    major_code=class_info['major_code'],
+    current_semester_id=semesters[class_info['current_semester'] - 1].id,
+    user_id=a_user.id
+)
 db.session.add(a_class)
 db.session.commit()
 
-student_fullname = ['Phạm Thành Trung', 'Huỳnh Minh Toàn', 'Nguyễn Bô Lão']
-student_course = [15, 16, 15]
-student_code = ['250880502', '66770289', '12345678']
-
-students = []
-for i in range(3):
-    foo = Student(full_name=student_fullname[i], student_code=student_code[i], course=student_course[i], class_id=a_class.id)
-    students += [foo]
-
-for i in students:
-    db.session.add(i)
-
-semester1 = Semester(1)
-semester2 = Semester(2)
-semester3 = Semester(3)
-
-db.session.add(semester1)
-db.session.add(semester2)
-db.session.add(semester3)
-db.session.commit()
-
-subjects = []
-subjects += [Subject('Toán cao cấp 1', 3, semester_id=semester1.id)]
-subjects += [Subject('Thống kê máy tính và ứng dụng', 3, semester_id=semester3.id)]
-subjects += [Subject('Hệ thống máy tính', 3, semester_id=semester2.id)]
-
-for i in subjects:
-    db.session.add(i)
-db.session.commit()
-
-import random
-
-data = []
-for student in students:
-    for subject in subjects:
-        data += [SubjectDetail(student_id=student.id, subject_id=subject.id, score_10=random.randint(0, 10))]
-
-for i in data:
-    db.session.add(i)
+# đưa thông tin từng sinh viên vào trong database
+students_info = read_json('data/student_info.pkl')
+for student in students_info:
+    foo = Student(
+        full_name=student['full_name'],
+        student_code=student['student_code'],
+        course=student['course'],
+        passed_credit=student['passed_credit'],
+        registered_credit=student['registered_credit'],
+        cumulative_score_10=student['cumulative_score_10'],
+        cumulative_score_4=student['cumulative_score_4'],
+        graded=student['graded'],
+        char_score=student['char_score'],
+        class_id=a_class.id
+    )
+    db.session.add(foo)
 db.session.commit()

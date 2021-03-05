@@ -12,6 +12,7 @@ marshmallow-sqlalchemy = "*"
 psycopg2-binary = "*"
 pandas = "*"
 xlrd = "*"
+bs4 = "*"
 
 [dev-packages]
 
