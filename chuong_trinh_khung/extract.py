@@ -21,14 +21,14 @@ for tag in data:
     if (tag.get('class')[0] == 'hockytr'):
         now = hockytr(tag)
         semester[now] = []
-    else:
+    elif (tag.get('class')[0] == 'HocPhanRowCls'):
         semester[now] += [hocphanrowcls(tag)]
 
 import pickle
 
-with open('../data/semester.pkl', 'wb') as f:
+with open('../data/subjects_of_semesters.pkl', 'wb') as f:
     pickle.dump(semester, f, pickle.HIGHEST_PROTOCOL)
 
 # to open it
-# with open('semester.pkl', 'rb') as f:
-#     data = pickle.load(f)
+with open('../data/subjects_of_semesters.pkl', 'rb') as f:
+    data = pickle.load(f)

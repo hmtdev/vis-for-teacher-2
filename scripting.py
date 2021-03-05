@@ -78,58 +78,14 @@ try:
 except:
     print('[Dropped]')
 
-hk1_nam1 = [
-    'Những nguyên lý cơ bản của Chủ nghĩa Mác – Lênin',
-    'Nhập môn Tin học',
-    'Toán cao cấp 1',
-    'Nhập môn Lập trình'
-]
-
-hk2_nam1 = [
-    'Kỹ thuật lập trình',
-    'Hệ thống Máy tính',
-    'Kỹ năng làm việc nhóm',
-    'Toán cao cấp 2',
-    'Toán ứng dụng',
-    'Hàm phức và phép biến đổi Laplace',
-    'Phương pháp tính',
-    'Vật lý đại cương',
-    'Logic học'
-]
-
-hk1_nam2 = [
-    'Cấu trúc rời rạc',
-    'Cấu trúc dữ liệu và giải thuật',
-    'Hệ cơ sở dữ liệu',
-    'Lập trình hướng đối tượng',
-    'Xác suất trong Khoa học Dữ liệu',
-    'Giải thuật và tối ưu hóa phân tán',
-    'Trực quan hóa dữ liệu',
-    'Đại số tuyến tính tính toán'
-]
-
-hk2_nam2 = [
-    'Mạng máy tính',
-    'Pháp luật đại cương',
-    'Phương pháp luận nghiên cứu khoa học',
-    'Thống kê máy tính và ứng dụng',
-    'Nhập môn Khoa học Dữ liệu',
-    'Lập trình phân tích dữ liệu',
-    'Quá trình ngẫu nhiên',
-    'Các ngôn ngữ truy vấn cơ sở dữ liệu',
-    'Kiến trúc hướng dịch vụ và Điện toán đám mây',
-    'Giao tiếp kinh doanh',
-    'Kỹ năng xây dựng kế hoạch',
-    'Quản trị doanh nghiệp',
-    'Môi trường và con người',
-    'Quản trị học',
-    'Kế toán cơ bản'
-]
-
 so_tin_chi = df.loc[0].to_list()
 outlier = ['Giáo dục Quốc phòng và An ninh 1', 'Giáo dục thể chất 1', 'Tiếng anh 1', 'Giáo dục thể chất 2',
-       'Giáo dục quốc phòng và an ninh 2', 'Tiếng anh 2']
+       'Giáo dục quốc phòng và an ninh 2', 'Tiếng Anh 2']
 df = df.rename(columns={'Học lực': 'Số tín chỉ', 'Unnamed: 85' : 'Điểm 10', 'Unnamed: 86': 'Điểm 4', 'Unnamed: 87' : 'Điểm chữ', 'Unnamed: 88': 'Xếp loại'})
+
+# thay thế tên cột Tiếng Anh 2 truyền thống bằng Tiếng Anh 2 tự viết (có sự khác nhau)
+idx = [i for i, subj in enumerate(df.columns) if 'Anh' in subj][0]
+df = df.rename({df.columns[idx]: 'Tiếng Anh 2'})
 
 diem_xeploai = {
     (9, 10) : ['A+', 'Xuất sắc'],
@@ -161,7 +117,7 @@ def get_xeploai(diem):
     if (diem >= 250):
         ok = ['Tiếng anh 1']
         if (diem >= 350):
-            ok += ['Tiếng anh 2']
+            ok += ['Tiếng Anh 2']
         ok += ['kk', 'kk']
     return ok
 
@@ -206,6 +162,8 @@ for i in range(len(df)):
 def cal_10(num, data):
     s = 0
     tin_chi = 0
+    # Vừa loại bỏ những môn không có trong df.columns, vừa loại bỏ các môn như quốc phòng, tiếng anh...
+    data = [i for i in get_available_column(data, df.columns) if i not in outlier]
     for i in data:
         foo = df.loc[num, i]
         if (np.isnan(foo)):
@@ -225,7 +183,8 @@ def cal_10(num, data):
 def cal_4(num, data):
     s = 0
     tin_chi = 0
-    data = get_available_column(data, df.columns)
+    # Vừa loại bỏ những môn không có trong df.columns, vừa loại bỏ các môn như quốc phòng, tiếng anh...
+    data = [i for i in get_available_column(data, df.columns) if i not in outlier]
     for i in data:
         foo = df.loc[num, i]
         if (np.isnan(foo)):
@@ -260,6 +219,9 @@ def so_tin_chi_sv_da_dang_ki(num, data):
         tin_chi_mon_hoc[subj] 
         for subj in data if not np.isnan(df.loc[num, subj])
     ])
+
+def get_diem_4(score):
+    return diem_he4[get_xeploai(score)[0]] if score < 11 else score
 
 # Hàm compare dùng để sắp xếp
 # -1 if o1 < o2
@@ -296,7 +258,7 @@ def scholarship(stc, data):
     data = get_available_column(data, df.columns)
     scholarship_members = []
     for i in range(len(df)):
-        if (so_tin_chi_sv_by_index(i, data) >= stc and cal_4(i, data) >= 3.2):
+        if (so_tin_chi_sv_da_hoc(i, data) >= stc and cal_4(i, data) >= 3.2):
             scholarship_members += [' '.join(df.loc[i, ['Họ đệm', 'Tên']].values)]
     return scholarship_members
 
@@ -348,3 +310,35 @@ for i in range(len(df)):
     student_info += [foo]
 write_json('data/student_info.pkl', student_info)
 
+# lấy điểm hệ 4 và hệ 10 của từng môn với từng sinh viên
+subject_detail = []
+for i in range(len(df)):
+    for subj in subjects:
+        foo = {
+            'student_name': df.loc[i, 'Họ và tên'],
+            'subject_name': subj,
+            'final_score_10': df.loc[i, subj],
+            'final_score_4': get_diem_4(df.loc[i, subj])
+        }
+        subject_detail += [foo]
+write_json('data/subject_detail.pkl', subject_detail)
+
+# tạo một dict là các môn học của từng kì (chỉ của khoa học dữ liệu thôi)
+subjects_of_semester = {}
+semester = read_json('data/subjects_of_semesters.pkl')
+for i in range(1, 9):
+    subjects_of_semester[i] = [subj['name'] for subj in semester[i]]
+
+# 
+semester_detail = []
+for semester_id in range(1, 9):
+    subject_of_semester = subjects_of_semester[semester_id]
+    for i in range(len(df)):
+        foo = {
+            'semester_id': semester_id,
+            'student_name': df.loc[i, 'Họ và tên'],
+            'semester_final_score_10': cal_10(i, subject_of_semester),
+            'semester_final_score_4': cal_4(i, subject_of_semester)
+        }
+        semester_detail += [foo]
+write_json('data/semester_detail.pkl', semester_detail)

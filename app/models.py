@@ -46,8 +46,8 @@ class SemesterDetail(db.Model):
     __tablename__ = 'SemesterDetail'
     student_id = db.Column(db.Integer, db.ForeignKey('Student.id'), primary_key=True)
     semester_id = db.Column(db.Integer, db.ForeignKey('Semester.id'), primary_key=True)
-    semester_average_score_10 = db.Column(db.Float, nullable=True)
-    semester_average_score_4 = db.Column(db.Float, nullable=True)
+    semester_final_score_10 = db.Column(db.Float, nullable=True, default=0)
+    semester_final_score_4 = db.Column(db.Float, nullable=True, default=0)
 
     semesters_with_students = db.relationship('Semester', back_populates='students_with_semesters')
     students_with_semesters = db.relationship('Student', back_populates='semesters_with_students')
@@ -56,20 +56,20 @@ class SemesterDetail(db.Model):
         self,
         student_id,
         semester_id,
-        semester_average_score_10=None,
-        semester_average_score_4=None
+        semester_final_score_10,
+        semester_final_score_4
     ):
         self.student_id = student_id
         self.semester_id = semester_id
-        self.semester_average_score_10 = semester_average_score_10
-        self.semester_average_score_4 = semester_average_score_4
+        self.semester_final_score_10 = semester_final_score_10
+        self.semester_final_score_4 = semester_final_score_4
 
     def __repr__(self):
         return '<SemesterDetail({}, {}, {}, {})>'.format(
             self.student_id,
             self.semester_id,
-            self.semester_average_score_10,
-            self.semester_average_score_4
+            self.semester_final_score_10,
+            self.semester_final_score_4
         )
 
 class User(db.Model):

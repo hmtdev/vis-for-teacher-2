@@ -2,7 +2,6 @@ import pickle
 from app import *
 from app.models import *
 
-
 def write_json(name, data):
     with open(name, 'wb') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
@@ -39,8 +38,8 @@ for i in semesters:
 db.session.commit()
 
 # Thêm các môn vào chương trình khung
-semester_subjects = read_json('data/semester.pkl')
-for semester, subjects in semester_subjects.items():
+subjects_of_semesters = read_json('data/subjects_of_semesters.pkl')
+for semester, subjects in subjects_of_semesters.items():
     data = Semester.query.filter_by(id=semester).one()
     for subj in subjects:
         subject = Subject(
@@ -80,6 +79,36 @@ for student in students_info:
         graded=student['graded'],
         char_score=student['char_score'],
         class_id=a_class.id
+    )
+    db.session.add(foo)
+db.session.commit()
+
+# đưa dữ liệu subject detail vào database 
+subject_detail = read_json('data/subject_detail.pkl')
+for detail in subject_detail:
+    student_id = Student.query.filter_by(full_name=detail['student_name']).first().id
+    if ('Anh' in detail['subject_name']):
+        subject_id = Subject.query.filter(Subject.name.contains('Anh')).first().id
+    else:
+        subject_id = Subject.query.filter_by(name=detail['subject_name']).first().id
+    foo = SubjectDetail(
+        student_id=student_id,
+        subject_id=subject_id,
+        final_score_10=detail['final_score_10'],
+        final_score_4=detail['final_score_4']
+    )
+    db.session.add(foo)
+# db.session.commit()
+
+# đưa dữ liệu điểm tổng kết theo kì của từng sinh viên vào database
+semester_detail = read_json('data/semester_detail.pkl')
+for detail in semester_detail:
+    student_id = Student.query.filter_by(full_name=detail['student_name']).first().id
+    foo = SemesterDetail(
+        student_id=student_id,
+        semester_id=detail['semester_id'],
+        semester_final_score_10=detail['semester_final_score_10'],
+        semester_final_score_4=detail['semester_final_score_4']
     )
     db.session.add(foo)
 db.session.commit()
